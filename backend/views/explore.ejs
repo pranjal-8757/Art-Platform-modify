@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f0f0f;
+        }
+        .post-card {
+            transition: transform 0.2s ease;
+        }
+        .post-card:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="bg-zinc-900 min-h-screen">
+    <!-- Header -->
+    <div class="sticky top-0 bg-zinc-900 border-b border-zinc-800 z-10">
+        <div class="max-w-2xl mx-auto px-4 py-4">
+            <h1 class="text-2xl mb-4 text-white font-semibold">Explore Posts</h1>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% posts.forEach(post => { %>
+            <div class="post-card bg-zinc-800 rounded-lg p-3 border border-zinc-700">
+                <!-- User Info -->
+                <div class="flex items-center gap-2 mb-2">
+                    <img src="/images/upload/<%= post.user.profilepic %>" 
+                         class="w-8 h-8 rounded-full object-cover">
+                    <h4 class="text-white text-sm font-medium">@<%= post.user.username %></h4>
+                </div>
+                
+                <!-- Post Content -->
+                <div class="mb-2">
+                    <p class="text-gray-200 text-sm leading-relaxed"><%= post.content %></p>
+                </div>
+                
+                <!-- Post Image -->
+                <% if (post.image) { %>
+                <div class="mb-2">
+                    <img class="w-full rounded-lg object-cover" 
+                         src="/images/upload/<%= post.image %>">
+                </div>
+                <% } %>
+                
+                <!-- Actions -->
+                <div class="flex items-center justify-between pt-2 border-t border-zinc-700">
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-400 text-xs"><%= post.likes.length %> likes</span>
+                        <a class="text-blue-400 hover:text-blue-300 text-xs font-medium transition-colors" 
+                           href="/like/<%= post._id %>">
+                            <%= post.likes.includes(user.userid) ? "Unlike" : "Like" %>
+                        </a>
+                    </div>
+                    <a class="text-gray-400 hover:text-gray-300 text-xs transition-colors" 
+                       href="/viewProfile/<%= post.user._id %>">View Profile</a>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+    </div>
+</body>
+</html>
