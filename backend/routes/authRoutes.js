@@ -5,7 +5,6 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const upload = require("../config/multerconfig");
 
-
 const userModel = require("../models/user.js");
 const postModel = require("../models/post.js");
 
@@ -23,27 +22,94 @@ router.get("/forgotPassword", (req, res) => {
   res.render("forgotPassword");
 });
 
+router.get('/profile/upload', (req, res) => {
+    res.render("profileupload");
+}); 
+
+
+router.get('/profile', isLoggedIn, async (req, res) => {
+    let user = await userModel.findOne({ email: req.user.email }).populate("posts");
+    res.render("profile", { user, loggedInUser: user }); 
+});
+
+router.get('/explore', isLoggedIn, async (req, res) => {
+  const posts = await postModel.find().populate("user").sort({ _id: -1 });
+  res.render("explore", { posts, user: req.user });
+});
+
+router.get('/like/:id', isLoggedIn, async (req, res) => {
+    let post = await postModel.findOne({ _id: req.params.id }).populate("user");
+
+    if (post.likes.indexOf(req.user.userid) === -1) {
+        post.likes.push(req.user.userid);
+    } else {
+        post.likes.splice(post.likes.indexOf(req.user.userid), 1);
+    }
+    
+    await post.save();
+    res.redirect("/profile"); 
+});
+
+router.get('/edit/:id', isLoggedIn, async (req, res) => {
+    let post = await postModel.findOne({ _id: req.params.id }).populate("user");
+
+    if (post.user._id.toString() !== req.user.userid.toString()) {
+        return res.status(403).send("Unauthorized");
+    }
+
+    res.render("edit", { post });
+});
+
+router.get('/delete/:id', isLoggedIn, async (req, res) => {
+    await postModel.findOneAndDelete({ _id: req.params.id });
+    res.redirect("/profile");
+});
+
+
+router.get('/profile/:id', isLoggedIn, async (req, res) => {
+  const user = await userModel.findById(req.params.id).populate("posts");
+  const loggedInUser = await userModel.findById(req.user.userid);
+  res.render("profile", { user, loggedInUser });
+});
+
+router.get("/viewProfile/:id", isLoggedIn, async (req, res) => {
+    const user = await userModel
+        .findById(req.params.id)
+        .populate("posts");
+
+    const loggedInUser = await userModel.findById(req.user.userid);
+
+    res.render("viewProfile", { user, loggedInUser });
+});
+
 router.get("/profile", async (req, res) => {
   try {
-    // 1️⃣ Get logged-in user ID (from token or session)
     const token = req.cookies.token;
     if (!token) return res.redirect("/login");
 
     const decoded = jwt.verify(token, "shhhh");
 
-    // 2️⃣ Fetch user from DB
     const user = await userModel.findById(decoded.userid);
 
-    // 3️⃣ Fetch user posts
     const posts = await postModel.find({ user: user._id });
 
-    // 4️⃣ Render with data
-res.render("profile", { user, posts, loggedInUser: user });
-  } catch (err) {
-    console.error(err);
-    res.redirect("/login");
-  }
-});
+    res.render("profile", { user, posts, loggedInUser: user });
+      } catch (err) {
+        console.error(err);
+        res.redirect("/login");
+      }
+  });
+
+
+function isLoggedIn(req, res, next) {
+    if (req.cookies.token === "") res.send("You must be logged in");
+    else {
+        let data = jwt.verify(req.cookies.token, "shhhh");
+        req.user = data;
+        next(); 
+    }  
+}
+
 
 router.post('/register', async (req, res) => {
     let { email, password, username, name, age } = req.body;
@@ -70,21 +136,6 @@ router.post('/register', async (req, res) => {
             return res.redirect("/profile"); 
         });
     });
-});
-
-router.post("/upload",isLoggedIn, upload.single("image"), async (req, res) => {
-  try {
-    const post = await postModel.create({
-      title: req.body.title,
-      image: req.file.filename,
-      user: req.session.userId,
-    });
-
-    res.redirect("/profile");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Upload failed");
-  }
 });
 
 
@@ -120,55 +171,63 @@ router.post('/login', async (req, res) => {
     }
 });
 
-router.get('/profile/upload', (req, res) => {
-    res.render("profileupload");
-}); 
+    router.post(
+      "/profile/upload",
+      isLoggedIn,
+      upload.single("image"),
+      async (req, res) => {
+        try {
+          const user = await userModel.findById(req.user.userid);
 
-router.post('/upload', upload.single("image"), async (req, res) => {
-    let user = await userModel.findOne({ email: req.user.email });
-    user.profilepic = req.file.path; // ✅ Cloudinary URL
-    await user.save();
-    res.redirect("/profile");
-}); 
+          if (!req.file) {
+            return res.redirect("/profile");
+          }
+
+          user.profilepic = req.file.filename;
+          await user.save();
+
+          res.redirect("/profile");
+        } catch (err) {
+          console.error(err);
+          res.redirect("/profile");
+        }
+      }
+    );
+
 
 router.get('/logout', (req, res) => {
     res.cookie("token", "", { httpOnly: true, expires: new Date(0) });
     res.redirect("/login");
 });
 
-function isLoggedIn(req, res, next) {
-    if (req.cookies.token === "") res.send("You must be logged in");
-    else {
-        let data = jwt.verify(req.cookies.token, "shhhh");
-        req.user = data;
-        next(); 
-    }  
-}
+router.post('/post', isLoggedIn, upload.single("image"), async (req, res) => {
+    let user = await userModel.findOne({ email: req.user.email });
+    let { content } = req.body;
 
-router.exports = express.Router();
+    let post = await postModel.create({
+        user: user._id,
+        content,
+        image: req.file ? req.file.filename : null 
+    });
 
-
-
-
-
-
+    user.posts.push(post._id);  
+    await user.save();
+    res.redirect("/profile");
+});
 
 
+router.post("/update/:id", isLoggedIn, upload.single("image"), async (req, res) => {
+    let post = await postModel.findOne({ _id: req.params.id });
 
+    post.content = req.body.content;
 
+    if (req.file) {
+        post.image = req.file.filename; 
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
+    await post.save();
+    res.redirect("/profile");
+});
 
 router.post("/forgotPassword", async (req, res) => {
   const { email } = req.body;
@@ -245,6 +304,10 @@ router.post("/reset-password/:token", async (req, res) => {
   res.redirect("/login");
 });
 
+router.get('/logout', (req, res) => {
+    res.cookie("token", "", { httpOnly: true, expires: new Date(0) });
+    res.redirect("/login");
+});
 
 module.exports = router;
 
