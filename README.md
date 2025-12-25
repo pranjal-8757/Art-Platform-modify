@@ -39,3 +39,6 @@ cd frontend
 npm install
 npm start
 
+
+The frontend application will run on http://localhost:3000
+ by default.
