@@ -17,9 +17,9 @@ Navigate to the backend directory and install dependencies:
 
 Create a .env file in the backend directory and add the following environment variables:
 
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
+   PORT=5000
+   MONGO_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret_key
 
 
 ⚠️ Note: Ensure your MongoDB instance is running and the connection string is valid.
@@ -27,9 +27,6 @@ JWT_SECRET=your_jwt_secret_key
 ▶️ Start the Backend Server
 -> npm start
 
-
-The backend server will start on http://localhost:5000
- (or the port specified in .env).
 
 3️⃣ Frontend Setup (Optional)
 
