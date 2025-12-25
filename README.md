@@ -1,17 +1,17 @@
 ⚙️ Installation & Setup
 
-Follow the steps below to set up the project locally.
+ !! Follow the steps below to set up the project locally.
 
 1️⃣ Clone the Repository
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+-> git clone https://github.com/your-username/your-repo-name.git
+-> cd your-repo-name
 
 2️⃣ Backend Setup
 
 Navigate to the backend directory and install dependencies:
 
-cd backend
-npm install
+-> cd backend
+-> npm install
 
 🔐 Environment Configuration
 
@@ -25,7 +25,7 @@ JWT_SECRET=your_jwt_secret_key
 ⚠️ Note: Ensure your MongoDB instance is running and the connection string is valid.
 
 ▶️ Start the Backend Server
-npm start
+-> npm start
 
 
 The backend server will start on http://localhost:5000
@@ -35,9 +35,9 @@ The backend server will start on http://localhost:5000
 
 If the project includes a frontend application, follow these steps:
 
-cd frontend
-npm install
-npm start
+-> cd frontend
+-> npm install
+-> npm start
 
 
 The frontend application will run on http://localhost:3000
